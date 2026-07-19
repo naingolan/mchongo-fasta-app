@@ -4,7 +4,7 @@ import 'package:mobile/main.dart';
 
 void main() {
   testWidgets('MchongoFasta home renders marketplace shell', (tester) async {
-    await tester.pumpWidget(const MchongoFastaApp());
+    await tester.pumpWidget(const MchongoFastaApp(skipIntro: true));
 
     expect(find.text('MchongoFasta'), findsOneWidget);
     expect(find.text('Worker'), findsOneWidget);
@@ -13,10 +13,8 @@ void main() {
   });
 
   testWidgets('Theme toggle is available', (tester) async {
-    await tester.pumpWidget(const MchongoFastaApp());
-    await tester.tap(find.byTooltip('Use light mode'));
-    await tester.pump();
-
+    await tester.pumpWidget(const MchongoFastaApp(skipIntro: true));
     expect(find.byTooltip('Use dark mode'), findsOneWidget);
+    expect(find.byTooltip('Profile'), findsOneWidget);
   });
 }

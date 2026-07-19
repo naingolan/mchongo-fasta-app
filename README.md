@@ -1,16 +1,20 @@
-# mobile
+# MchongoFasta Mobile
 
-A new Flutter project.
+Flutter app for workers and employers on the Tanzanian daily-work marketplace.
 
-## Getting Started
+## Design
 
-This project is a starting point for a Flutter application.
+Blue fintech visual system (splash, onboarding, soft cards, pill CTAs) with MchongoFasta product context: jobs, verification, wallet, and hiring.
 
-A few resources to get you started if this is your first Flutter project:
+## Run
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Test
+
+```bash
+flutter test
+```
