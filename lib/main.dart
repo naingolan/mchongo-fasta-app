@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/models/job.dart';
+import 'package:mobile/models/user_role.dart';
+import 'package:mobile/screens/auth_flow.dart';
+import 'package:mobile/screens/job_details_screen.dart';
+import 'package:mobile/screens/post_task_flow.dart';
+import 'package:mobile/screens/worker_profile.dart';
 import 'package:mobile/theme.dart';
+import 'package:mobile/widgets/brand_logo.dart';
+import 'package:mobile/widgets/jobs_map_view.dart';
+import 'package:mobile/widgets/mf_components.dart';
+import 'package:mobile/widgets/role_sheets.dart';
+import 'package:mobile/widgets/tab_icons.dart';
 
 void main() {
   runApp(const MchongoFastaApp());
@@ -35,11 +46,15 @@ class _MchongoFastaAppState extends State<MchongoFastaApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       home: widget.skipIntro
-          ? HomeShell(onThemeToggle: _toggleTheme)
+          ? HomeShell(
+              onThemeToggle: _toggleTheme,
+              skipEmployerSheet: true,
+            )
           : SplashScreen(
               onFinished: () {},
               childBuilder: (context) => OnboardingScreen(
                 onDone: () {
+                  // New users land on jobs (worker browse) by default.
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
                       builder: (_) => HomeShell(onThemeToggle: _toggleTheme),
@@ -90,14 +105,24 @@ class _SplashScreenState extends State<SplashScreen> {
     return const Scaffold(
       backgroundColor: MfColors.primary,
       body: Center(
-        child: Text(
-          'MchongoFasta.',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 34,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MfBrandIcon(
+              size: 96,
+              color: Colors.white,
+              accentColor: Colors.white70,
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Mchongo Fasta',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -119,7 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const _pages = [
     _OnboardPage(
-      title: 'Find verified daily work with MchongoFasta.',
+      title: 'Find verified daily work with Mchongo Fasta.',
       body:
           'Cleaning, delivery, care and repairs around Dar — matched fast with ratings and safe pay.',
       cardTitle: 'Today earnings',
@@ -186,9 +211,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           item.title,
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                height: 1.15,
-                                letterSpacing: -0.6,
+                                fontWeight: FontWeight.w700,
+                                height: 1.25,
                               ),
                         ),
                         const SizedBox(height: 12),
@@ -361,12 +385,19 @@ class _OnboardingHero extends StatelessWidget {
   }
 }
 
-enum UserRole { worker, employer }
-
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key, required this.onThemeToggle});
+  const HomeShell({
+    super.key,
+    required this.onThemeToggle,
+    this.skipEmployerSheet = false,
+    this.loggedIn = false,
+    this.role = UserRole.worker,
+  });
 
   final VoidCallback onThemeToggle;
+  final bool skipEmployerSheet;
+  final bool loggedIn;
+  final UserRole role;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -374,23 +405,221 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _page = 0;
-  UserRole _role = UserRole.worker;
+
+  bool get _loggedIn => widget.loggedIn;
+  UserRole get _role => widget.role;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.skipEmployerSheet && !_loggedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showEmployerInviteSheet(
+          context: context,
+          onEmployerSignIn: () => _startAuth(UserRole.employer),
+        );
+      });
+    }
+  }
+
+  void _startAuth(UserRole role) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AuthFlowScreen(
+          role: role,
+          homeBuilder: (_) => HomeShell(
+            onThemeToggle: widget.onThemeToggle,
+            skipEmployerSheet: true,
+            loggedIn: true,
+            role: role,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openPostTaskFlow(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PostTaskFlowScreen()),
+    );
+  }
+
+  Future<void> _onJobTap(Job job) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => JobDetailsScreen(
+          job: job,
+          loggedIn: _loggedIn,
+          role: _role,
+          onSignIn: () => _startAuth(UserRole.worker),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onProtectedTab(int index) async {
+    final isEmployer = _loggedIn && _role == UserRole.employer;
+
+    // Find / Hire is always open.
+    if (index == 0) {
+      setState(() => _page = index);
+      return;
+    }
+
+    if (!_loggedIn) {
+      // Guest: Post opens employer invite; others need worker login.
+      if (index == 1) {
+        await showEmployerInviteSheet(
+          context: context,
+          onEmployerSignIn: () => _startAuth(UserRole.employer),
+        );
+        return;
+      }
+      await showLoginToGetJobSheet(
+        context: context,
+        title: 'Sign in to continue',
+        message:
+            'Create or sign in to access profile, wallet, and account tools.',
+        onSignIn: () => _startAuth(UserRole.worker),
+      );
+      return;
+    }
+
+    if (isEmployer) {
+      // Hire, Post, Wallet, Profile
+      setState(() => _page = index);
+      return;
+    }
+
+    // Worker: Find, Verify, Wallet, Profile
+    setState(() => _page = index);
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pages = [
-      DiscoverPage(role: _role),
-      const PostJobPage(),
-      const VerificationPage(),
-      const WalletPage(),
+    final isEmployer = _loggedIn && _role == UserRole.employer;
+    final isWorker = _loggedIn && _role == UserRole.worker;
+    final workerStats = demoWorkerStats();
+
+    final pages = <Widget>[
+      DiscoverPage(
+        role: isEmployer ? UserRole.employer : UserRole.worker,
+        loggedIn: _loggedIn,
+        onJobTap: _onJobTap,
+        onEmployerCta: () => showEmployerInviteSheet(
+          context: context,
+          onEmployerSignIn: () => _startAuth(UserRole.employer),
+        ),
+        onPostTask: () => _openPostTaskFlow(context),
+      ),
+      if (isWorker) ...[
+        const VerificationPage(),
+        const WalletPage(),
+        WorkerProfileTab(
+          onThemeToggle: widget.onThemeToggle,
+          stats: workerStats,
+        ),
+      ] else if (isEmployer) ...[
+        PostJobPage(onStartPost: () => _openPostTaskFlow(context)),
+        const WalletPage(),
+        EmployerProfileTab(onThemeToggle: widget.onThemeToggle),
+      ] else ...[
+        PostJobPage(
+          onStartPost: () => showEmployerInviteSheet(
+            context: context,
+            onEmployerSignIn: () => _startAuth(UserRole.employer),
+          ),
+        ),
+        const VerificationPage(),
+        const WalletPage(),
+      ],
     ];
+
+    final destinations = <NavigationDestination>[
+      NavigationDestination(
+        icon: const Icon(Icons.travel_explore_outlined),
+        label: isEmployer ? 'Hire' : 'Find',
+      ),
+      if (isWorker) ...[
+        const NavigationDestination(
+          icon: Icon(Icons.verified_user_outlined),
+          label: 'Verify',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          label: 'Wallet',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.person_outline_rounded),
+          label: 'Profile',
+        ),
+      ] else if (isEmployer) ...[
+        const NavigationDestination(
+          icon: Icon(Icons.add_box_outlined),
+          label: 'Post',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          label: 'Wallet',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.person_outline_rounded),
+          label: 'Profile',
+        ),
+      ] else ...[
+        const NavigationDestination(
+          icon: Icon(Icons.add_box_outlined),
+          label: 'Post',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.verified_user_outlined),
+          label: 'Verify',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.account_balance_wallet_outlined),
+          label: 'Wallet',
+        ),
+      ],
+    ];
+
+    final safeIndex = _page.clamp(0, pages.length - 1);
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: false,
         titleSpacing: 20,
         title: const BrandMark(),
         actions: [
+          if (!_loggedIn)
+            TextButton(
+              onPressed: () => showEmployerInviteSheet(
+                context: context,
+                onEmployerSignIn: () => _startAuth(UserRole.employer),
+              ),
+              child: const Text(
+                'Employer?',
+                style: TextStyle(
+                  color: MfColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(
+                child: Text(
+                  isEmployer ? 'Employer' : 'Worker',
+                  style: const TextStyle(
+                    color: MfColors.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
           IconButton(
             tooltip: isDark ? 'Use light mode' : 'Use dark mode',
             onPressed: widget.onThemeToggle,
@@ -398,97 +627,103 @@ class _HomeShellState extends State<HomeShell> {
               isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
             ),
           ),
-          IconButton(
-            tooltip: 'Profile',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ProfilePage(onThemeToggle: widget.onThemeToggle),
-                ),
-              );
-            },
-            icon: const Icon(Icons.person_outline_rounded),
-          ),
           const SizedBox(width: 4),
         ],
       ),
-      body: SafeArea(
-        child: Column(
+      body: SafeArea(child: pages[safeIndex]),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: safeIndex,
+        onDestinationSelected: _onProtectedTab,
+        destinations: destinations,
+      ),
+    );
+  }
+}
+
+class EmployerProfileTab extends StatelessWidget {
+  const EmployerProfileTab({super.key, required this.onThemeToggle});
+
+  final VoidCallback onThemeToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      children: [
+        Row(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: SegmentedButton<UserRole>(
-                  segments: const [
-                    ButtonSegment(
-                      value: UserRole.worker,
-                      label: Text('Worker'),
-                      icon: Icon(Icons.badge_outlined),
-                    ),
-                    ButtonSegment(
-                      value: UserRole.employer,
-                      label: Text('Employer'),
-                      icon: Icon(Icons.business_center_outlined),
-                    ),
-                  ],
-                  selected: {_role},
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith((states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return MfColors.primary;
-                      }
-                      return Colors.transparent;
-                    }),
-                    foregroundColor: WidgetStateProperty.resolveWith((states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return Colors.white;
-                      }
-                      return MfColors.muted;
-                    }),
-                    side: const WidgetStatePropertyAll(BorderSide.none),
-                    shape: WidgetStatePropertyAll(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                  onSelectionChanged: (value) =>
-                      setState(() => _role = value.first),
+            const CircleAvatar(
+              radius: 28,
+              backgroundColor: MfColors.primary,
+              child: Text(
+                'E',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
-            Expanded(child: pages[_page]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Employer account',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const Text(
+                    'Hire verified workers nearby',
+                    style: TextStyle(color: MfColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Settings',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ProfileSettingsPage(onThemeToggle: onThemeToggle),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.settings_outlined),
+            ),
           ],
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _page,
-        onDestinationSelected: (index) => setState(() => _page = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.travel_explore_outlined),
-            label: 'Find',
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: MfColors.line),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.add_box_outlined),
-            label: 'Post',
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Hiring snapshot',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+              SizedBox(height: 12),
+              Text('Jobs posted: 12', style: TextStyle(color: MfColors.muted)),
+              SizedBox(height: 6),
+              Text('Workers hired: 9', style: TextStyle(color: MfColors.muted)),
+              SizedBox(height: 6),
+              Text(
+                'Avg match time: 4 min',
+                style: TextStyle(color: MfColors.muted),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.verified_user_outlined),
-            label: 'Verify',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            label: 'Wallet',
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -499,34 +734,30 @@ class BrandMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: MfColors.primary,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.bolt_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
+        MfBrandIcon(
+          size: 30,
+          color: isDark ? MfColors.primarySoft : MfColors.primary,
+          accentColor: isDark ? MfColors.primary : MfColors.primaryDark,
         ),
         const SizedBox(width: 10),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'MchongoFasta',
+              'Mchongo Fasta',
               style: text.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             Text(
               'Daily work, verified fast',
-              style: text.labelSmall?.copyWith(color: MfColors.muted),
+              style: text.labelSmall?.copyWith(
+                color: isDark ? MfColors.mutedDark : MfColors.muted,
+              ),
             ),
           ],
         ),
@@ -536,16 +767,30 @@ class BrandMark extends StatelessWidget {
 }
 
 class DiscoverPage extends StatefulWidget {
-  const DiscoverPage({super.key, required this.role});
+  const DiscoverPage({
+    super.key,
+    required this.role,
+    required this.loggedIn,
+    required this.onJobTap,
+    required this.onEmployerCta,
+    this.onPostTask,
+  });
 
   final UserRole role;
+  final bool loggedIn;
+  final ValueChanged<Job> onJobTap;
+  final VoidCallback onEmployerCta;
+  final VoidCallback? onPostTask;
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
 }
 
+enum _DiscoverView { map, list }
+
 class _DiscoverPageState extends State<DiscoverPage> {
   String _category = 'All';
+  _DiscoverView _view = _DiscoverView.map;
 
   final List<Job> _jobs = const [
     Job(
@@ -556,6 +801,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
       time: 'Today 10:30',
       rating: '4.9',
       verified: true,
+      latitude: -6.7550,
+      longitude: 39.2500,
     ),
     Job(
       title: 'Errand run to Kariakoo',
@@ -565,15 +812,63 @@ class _DiscoverPageState extends State<DiscoverPage> {
       time: 'Today 13:00',
       rating: '4.7',
       verified: true,
+      latitude: -6.8235,
+      longitude: 39.2750,
     ),
     Job(
-      title: 'Paint two office rooms',
+      title: 'Paint two office rooms in Masaki',
       category: 'Technical',
       pay: 'TZS 95,000',
       distance: '5.2 km',
       time: 'Tomorrow',
       rating: '4.8',
-      verified: false,
+      verified: true,
+      latitude: -6.7450,
+      longitude: 39.2800,
+    ),
+    Job(
+      title: 'Elderly care assistance in Kinondoni',
+      category: 'Care',
+      pay: 'TZS 50,000',
+      distance: '2.4 km',
+      time: 'Today 15:00',
+      rating: '4.9',
+      verified: true,
+      latitude: -6.7800,
+      longitude: 39.2600,
+    ),
+    Job(
+      title: 'Laundry & deep kitchen cleaning in Sinza',
+      category: 'Domestic',
+      pay: 'TZS 40,000',
+      distance: '3.1 km',
+      time: 'Today 11:30',
+      rating: '4.8',
+      verified: true,
+      latitude: -6.7850,
+      longitude: 39.2250,
+    ),
+    Job(
+      title: 'AC repair and servicing in Posta',
+      category: 'Technical',
+      pay: 'TZS 75,000',
+      distance: '4.0 km',
+      time: 'Today 14:00',
+      rating: '4.9',
+      verified: true,
+      latitude: -6.8160,
+      longitude: 39.2900,
+    ),
+    Job(
+      title: 'Furniture moving support in Mbezi Beach',
+      category: 'Logistics',
+      pay: 'TZS 60,000',
+      distance: '6.5 km',
+      time: 'Tomorrow',
+      rating: '4.7',
+      verified: true,
+      latitude: -6.7000,
+      longitude: 39.2300,
     ),
   ];
 
@@ -584,58 +879,200 @@ class _DiscoverPageState extends State<DiscoverPage> {
         ? _jobs
         : _jobs.where((job) => job.category == _category).toList();
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      children: [
-        HeroPanel(isWorker: isWorker),
+    if (!isWorker) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        children: [
+        HeroPanel(
+          isWorker: false,
+          loggedIn: widget.loggedIn,
+          onPrimaryAction: widget.loggedIn
+              ? widget.onPostTask
+              : widget.onEmployerCta,
+        ),
         const SizedBox(height: 18),
         SectionHeader(
-          title: isWorker ? 'Nearby mchongo' : 'Hiring desk',
-          action: isWorker ? 'Map' : 'Drafts',
-        ),
-        const SizedBox(height: 10),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: ['All', 'Domestic', 'Logistics', 'Care', 'Technical']
-                .map(
-                  (category) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(category),
-                      selected: _category == category,
-                      onSelected: (_) => setState(() => _category = category),
-                      labelStyle: TextStyle(
-                        color: _category == category
-                            ? Colors.white
-                            : MfColors.ink,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
+          title: 'Hiring desk',
+          action: 'Post',
+          onAction: widget.onPostTask,
         ),
         const SizedBox(height: 14),
-        if (isWorker)
-          ...visibleJobs.map(
-            (job) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: JobCard(job: job),
-            ),
-          )
-        else
-          const EmployerDashboard(),
+        const EmployerDashboard(),
       ],
+    );
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(99),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.25)
+                      : MfColors.ink.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ViewTab(
+                    label: 'Map',
+                    icon: MfMapTabIcon(
+                      selected: _view == _DiscoverView.map,
+                      size: 20,
+                    ),
+                    selected: _view == _DiscoverView.map,
+                    onTap: () => setState(() => _view = _DiscoverView.map),
+                  ),
+                ),
+                Expanded(
+                  child: _ViewTab(
+                    label: 'List',
+                    icon: MfListTabIcon(
+                      selected: _view == _DiscoverView.list,
+                      size: 20,
+                    ),
+                    selected: _view == _DiscoverView.list,
+                    onTap: () => setState(() => _view = _DiscoverView.list),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 38,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: ['All', 'Domestic', 'Logistics', 'Care', 'Technical']
+                  .map(
+                    (category) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(category),
+                        selected: _category == category,
+                        checkmarkColor: Colors.white,
+                        onSelected: (_) =>
+                            setState(() => _category = category),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        labelStyle: TextStyle(
+                          color: _category == category
+                              ? Colors.white
+                              : (Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : MfColors.ink),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: _view == _DiscoverView.map
+                ? JobsMapView(
+                    jobs: visibleJobs,
+                    onJobTap: widget.onJobTap,
+                  )
+                : ListView(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    children: [
+                      HeroPanel(
+                        isWorker: true,
+                        loggedIn: widget.loggedIn,
+                        onPrimaryAction: null,
+                      ),
+                      const SizedBox(height: 14),
+                      ...visibleJobs.map(
+                        (job) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: JobCard(
+                            job: job,
+                            onTap: () => widget.onJobTap(job),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewTab extends StatelessWidget {
+  const _ViewTab({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final Widget icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unselectedColor = isDark ? MfColors.mutedDark : MfColors.muted;
+    return Material(
+      color: selected ? MfColors.primary : Colors.transparent,
+      borderRadius: BorderRadius.circular(99),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(99),
+        child: SizedBox(
+          height: 44,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              icon,
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: selected ? Colors.white : unselectedColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
 class HeroPanel extends StatelessWidget {
-  const HeroPanel({super.key, required this.isWorker});
+  const HeroPanel({
+    super.key,
+    required this.isWorker,
+    required this.loggedIn,
+    this.onPrimaryAction,
+  });
 
   final bool isWorker;
+  final bool loggedIn;
+  final VoidCallback? onPrimaryAction;
 
   @override
   Widget build(BuildContext context) {
@@ -665,7 +1102,11 @@ class HeroPanel extends StatelessWidget {
             children: [
               StatusPill(
                 icon: Icons.shield_outlined,
-                label: isWorker ? 'Verification: 78%' : 'Employer trusted',
+                label: !loggedIn && isWorker
+                    ? 'Browse as guest'
+                    : isWorker
+                        ? 'Worker mode'
+                        : 'Employer mode',
                 onDark: true,
               ),
               const Spacer(),
@@ -686,7 +1127,7 @@ class HeroPanel extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             isWorker
-                ? 'Cleaning, delivery, care, repairs and errands with ratings, safe payments and fast matching.'
+                ? 'Browse open mchongo below. Tap a job and sign in when you’re ready to apply.'
                 : 'Post a task, review vetted workers, track completion, then rate and pay securely.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.82),
@@ -703,11 +1144,15 @@ class HeroPanel extends StatelessWidget {
                     foregroundColor: MfColors.primary,
                     minimumSize: const Size.fromHeight(48),
                   ),
-                  onPressed: () {},
+                  onPressed: onPrimaryAction,
                   icon: Icon(
                     isWorker ? Icons.work_outline : Icons.add_task_outlined,
                   ),
-                  label: Text(isWorker ? 'Accept mchongo' : 'Post task'),
+                  label: Text(
+                    isWorker
+                        ? (loggedIn ? 'Find mchongo' : 'Browse jobs')
+                        : 'Post task',
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -729,38 +1174,46 @@ class HeroPanel extends StatelessWidget {
 }
 
 class JobCard extends StatelessWidget {
-  const JobCard({super.key, required this.job});
+  const JobCard({super.key, required this.job, this.onTap});
 
   final Job job;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
+    return Material(
+      color: theme.cardColor,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: MfColors.ink.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: MfColors.ink.withValues(alpha: 0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           Row(
             children: [
-              Icon(
-                job.verified
-                    ? Icons.verified_outlined
-                    : Icons.pending_actions_outlined,
-                color: job.verified ? MfColors.primary : MfColors.muted,
-              ),
+              if (job.verified)
+                const MfVerifiedTaskIcon(size: 20)
+              else
+                Icon(
+                  Icons.pending_actions_outlined,
+                  color: MfColors.muted,
+                  size: 20,
+                ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -793,15 +1246,24 @@ class JobCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Text(
-                job.time,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: MfColors.muted,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const MfTimeClockIcon(size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    job.time,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: MfColors.muted,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -956,63 +1418,151 @@ class MetricTile extends StatelessWidget {
 }
 
 class PostJobPage extends StatelessWidget {
-  const PostJobPage({super.key});
+  const PostJobPage({super.key, required this.onStartPost});
+
+  final VoidCallback onStartPost;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
-        const SectionHeader(title: 'Post a task', action: 'Templates'),
-        const SizedBox(height: 12),
-        TextField(
-          decoration: const InputDecoration(
-            labelText: 'Task title',
-            hintText: 'Example: Clean a 3 bedroom house',
-            prefixIcon: Icon(Icons.title_outlined),
-          ),
+        Text(
+          'Post a task',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
         ),
-        const SizedBox(height: 10),
-        TextField(
-          minLines: 3,
-          maxLines: 5,
-          decoration: const InputDecoration(
-            labelText: 'Details',
-            hintText: 'Location, timing, tools needed and expected output',
-            prefixIcon: Icon(Icons.notes_outlined),
-          ),
+        const SizedBox(height: 8),
+        const Text(
+          'Create a short-term job and match verified workers nearby in Dar.',
+          style: TextStyle(color: MfColors.muted, height: 1.45),
         ),
-        const SizedBox(height: 10),
-        const Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Budget',
-                  hintText: 'TZS',
-                  prefixIcon: Icon(Icons.payments_outlined),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [MfColors.primary, MfColors.primaryDark],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'New mchongo',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'When',
-                  hintText: 'Today',
-                  prefixIcon: Icon(Icons.schedule_outlined),
+              const SizedBox(height: 8),
+              const Text(
+                'Category, details, area, timing, and budget — in a few steps.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 20,
+                  height: 1.25,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: MfColors.primary,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: onStartPost,
+                child: const Text('Start posting'),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.bolt_outlined),
-          label: const Text('Match verified workers'),
+        const SizedBox(height: 18),
+        const Text(
+          'How it works',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
+        const SizedBox(height: 10),
+        const _PostTip(
+          step: '1',
+          title: 'Pick a category',
+          body: 'Domestic, logistics, care, or technical.',
+        ),
+        const _PostTip(
+          step: '2',
+          title: 'Describe the work',
+          body: 'Title, details, Dar area, and when you need it.',
+        ),
+        const _PostTip(
+          step: '3',
+          title: 'Set budget & post',
+          body: 'Workers apply, you review, then pay in-app.',
         ),
       ],
+    );
+  }
+}
+
+class _PostTip extends StatelessWidget {
+  const _PostTip({
+    required this.step,
+    required this.title,
+    required this.body,
+  });
+
+  final String step;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? MfColors.surfaceDarkElevated
+                  : const Color(0xFFEEF2FF),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                step,
+                style: TextStyle(
+                  color: isDark ? MfColors.primarySoft : MfColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  body,
+                  style: TextStyle(
+                    color: isDark ? MfColors.mutedDark : MfColors.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1068,6 +1618,10 @@ class VerificationStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? MfColors.primarySoft : MfColors.primary;
+    final mutedColor = isDark ? MfColors.mutedDark : MfColors.muted;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Container(
@@ -1076,15 +1630,18 @@ class VerificationStep extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
         ),
         child: ListTile(
-          leading: Icon(icon, color: done ? MfColors.primary : MfColors.muted),
+          leading: Icon(icon, color: done ? primaryColor : mutedColor),
           title: Text(
             title,
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
-          subtitle: Text(subtitle),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(color: mutedColor),
+          ),
           trailing: Icon(
             done ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: done ? MfColors.primary : MfColors.muted,
+            color: done ? primaryColor : mutedColor,
           ),
         ),
       ),
@@ -1097,61 +1654,45 @@ class WalletPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       children: [
-        const SectionHeader(title: 'Wallet', action: 'Statement'),
+        SectionHeader(
+          title: 'Wallet',
+          action: 'Manage',
+          onAction: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ManageWalletPage()),
+            );
+          },
+        ),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [MfColors.primary, MfColors.primaryDark],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Available balance',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'TZS 128,500',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Row(
-                children: [
-                  Expanded(
-                    child: _WalletAction(
-                      icon: Icons.call_received,
-                      label: 'Withdraw',
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: _WalletAction(
-                      icon: Icons.workspace_premium_outlined,
-                      label: 'Premium',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        const MfBalanceCard(
+          title: 'M-Pesa wallet',
+          balance: 'TZS 128,500',
+          incomeLabel: 'Earned',
+          incomeValue: 'TZS 95,000',
+          spendLabel: 'Fees',
+          spendValue: 'TZS 11,500',
+        ),
+        const SizedBox(height: 12),
+        const MfBalanceCard(
+          title: 'Bank payout',
+          balance: 'TZS 42,000',
+          incomeLabel: 'Incoming',
+          incomeValue: 'TZS 42,000',
+          spendLabel: 'Withdrawn',
+          spendValue: 'TZS 0',
+          dark: true,
+        ),
+        const SizedBox(height: 16),
+        MfPrimaryButton(
+          label: 'Add payout method',
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ManageWalletPage()),
+            );
+          },
         ),
         const SizedBox(height: 14),
         const TransactionRow(
@@ -1168,22 +1709,90 @@ class WalletPage extends StatelessWidget {
   }
 }
 
-class _WalletAction extends StatelessWidget {
-  const _WalletAction({required this.icon, required this.label});
+class ManageWalletPage extends StatefulWidget {
+  const ManageWalletPage({super.key});
 
-  final IconData icon;
-  final String label;
+  @override
+  State<ManageWalletPage> createState() => _ManageWalletPageState();
+}
+
+class _ManageWalletPageState extends State<ManageWalletPage> {
+  bool _instantPayouts = true;
+  bool _freezeWallet = false;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: () {},
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white,
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.45)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Manage wallet'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        children: [
+          const MfBalanceCard(
+            title: 'M-Pesa wallet',
+            balance: 'TZS 128,500',
+            incomeLabel: 'Earned',
+            incomeValue: 'TZS 95,000',
+            spendLabel: 'Fees',
+            spendValue: 'TZS 11,500',
+          ),
+          const SizedBox(height: 18),
+          MfSettingsRow(
+            icon: Icons.payments_outlined,
+            title: 'Daily payout limit',
+            subtitle: 'TZS 300,000 / day',
+            onTap: () {},
+          ),
+          const Divider(height: 1),
+          MfSettingsRow(
+            icon: Icons.bolt_outlined,
+            title: 'Instant payouts',
+            trailing: Switch.adaptive(
+              value: _instantPayouts,
+              activeTrackColor: MfColors.primary,
+              onChanged: (value) => setState(() => _instantPayouts = value),
+            ),
+          ),
+          const Divider(height: 1),
+          MfSettingsRow(
+            icon: Icons.ac_unit_outlined,
+            title: 'Freeze wallet',
+            trailing: Switch.adaptive(
+              value: _freezeWallet,
+              activeTrackColor: MfColors.primary,
+              onChanged: (value) => setState(() => _freezeWallet = value),
+            ),
+          ),
+          const SizedBox(height: 24),
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              'Remove payout method',
+              style: TextStyle(
+                color: Color(0xFFDC2626),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          MfPrimaryButton(
+            label: 'Save',
+            onPressed: () {
+              showMfSuccessDialog(
+                context: context,
+                title: 'Great, your wallet is ready',
+                message:
+                    'You can now receive job payments and withdraw to M-Pesa conveniently.',
+                onDone: () => Navigator.of(context).pop(),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -1197,6 +1806,10 @@ class TransactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? MfColors.primarySoft : MfColors.primary;
+    final inkColor = isDark ? Colors.white : MfColors.ink;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
@@ -1211,8 +1824,8 @@ class TransactionRow extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w800,
               color: amount.startsWith('+')
-                  ? MfColors.primary
-                  : MfColors.ink,
+                  ? primaryColor
+                  : inkColor,
             ),
           ),
         ),
@@ -1221,10 +1834,18 @@ class TransactionRow extends StatelessWidget {
   }
 }
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key, required this.onThemeToggle});
 
   final VoidCallback onThemeToggle;
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  bool _notifications = true;
+  bool _biometrics = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1274,12 +1895,40 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Verified cleaning specialist',
             textAlign: TextAlign.center,
-            style: TextStyle(color: MfColors.muted),
+            style: TextStyle(
+              color: isDark ? MfColors.mutedDark : MfColors.muted,
+            ),
           ),
           const SizedBox(height: 24),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Settings',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          MfToggleRow(
+            title: 'Get Notifications',
+            subtitle:
+                'Job matches, hiring updates, and payment alerts from MchongoFasta.',
+            value: _notifications,
+            onChanged: (value) => setState(() => _notifications = value),
+          ),
+          const Divider(height: 1),
+          MfToggleRow(
+            title: 'Log in with Face ID',
+            subtitle: 'Use biometrics for faster, safer access to your account.',
+            value: _biometrics,
+            onChanged: (value) => setState(() => _biometrics = value),
+          ),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
           _ProfileTile(
             icon: Icons.account_balance_outlined,
             label: 'Payout accounts',
@@ -1296,7 +1945,7 @@ class ProfilePage extends StatelessWidget {
             trailing: Switch.adaptive(
               value: isDark,
               activeThumbColor: MfColors.primary,
-              onChanged: (_) => onThemeToggle(),
+              onChanged: (_) => widget.onThemeToggle(),
             ),
           ),
           _ProfileTile(
@@ -1414,6 +2063,7 @@ class _ProfileTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -1422,7 +2072,7 @@ class _ProfileTile extends StatelessWidget {
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(icon, color: MfColors.ink),
+        leading: Icon(icon, color: isDark ? Colors.white : MfColors.ink),
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         trailing: trailing ?? const Icon(Icons.chevron_right_rounded),
       ),
@@ -1431,10 +2081,16 @@ class _ProfileTile extends StatelessWidget {
 }
 
 class SectionHeader extends StatelessWidget {
-  const SectionHeader({super.key, required this.title, required this.action});
+  const SectionHeader({
+    super.key,
+    required this.title,
+    required this.action,
+    this.onAction,
+  });
 
   final String title;
   final String action;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -1450,7 +2106,7 @@ class SectionHeader extends StatelessWidget {
         ),
         const Spacer(),
         TextButton(
-          onPressed: () {},
+          onPressed: onAction ?? () {},
           child: Text(
             action,
             style: const TextStyle(
@@ -1464,66 +2120,3 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-class StatusPill extends StatelessWidget {
-  const StatusPill({
-    super.key,
-    required this.icon,
-    required this.label,
-    this.onDark = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool onDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: onDark
-            ? Colors.white.withValues(alpha: 0.16)
-            : const Color(0xFFEEF2FF),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 15,
-            color: onDark ? Colors.white : MfColors.primary,
-          ),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: onDark ? Colors.white : MfColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class Job {
-  const Job({
-    required this.title,
-    required this.category,
-    required this.pay,
-    required this.distance,
-    required this.time,
-    required this.rating,
-    required this.verified,
-  });
-
-  final String title;
-  final String category;
-  final String pay;
-  final String distance;
-  final String time;
-  final String rating;
-  final bool verified;
-}
