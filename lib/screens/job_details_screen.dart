@@ -184,7 +184,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(shortTitle),
+        title: Text(
+          shortTitle,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: isDark ? MfColors.primarySoft : MfColors.primary,
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: _isBookmarked ? 'Saved' : 'Save job',
