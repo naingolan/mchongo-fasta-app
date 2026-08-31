@@ -794,3 +794,136 @@ class MfShareNetworkIcon extends StatelessWidget {
     );
   }
 }
+
+/// Light Mode Icon (Light-Mode-Dark-Light)
+class MfLightModeIcon extends StatelessWidget {
+  const MfLightModeIcon({
+    super.key,
+    this.size = 22,
+    this.primaryColor,
+    this.secondaryColor,
+  });
+
+  final double size;
+  final Color? primaryColor;
+  final Color? secondaryColor;
+
+  static const _path1 =
+      'M16.12 8.84a5.35 5.35 0 0 0 -4.53 -2.36 7.67 7.67 0 0 0 -2.65 0.43C4.87 8.47 3.32 15.65 9 17c2.67 0.66 5.37 0.74 7 -1.46a6.17 6.17 0 0 0 0.12 -6.7ZM15.34 15c-1.45 1.79 -3.79 1.55 -6 1a4.93 4.93 0 0 1 -1.18 -0.42C5 13.94 6.28 8.89 9.23 7.63c0.61 -0.26 3.84 -1.43 6.08 1.37a3.76 3.76 0 0 1 0.81 1.64 5.28 5.28 0 0 1 -0.78 4.36Z';
+  static const _path2 =
+      'M11.89 10a5 5 0 0 1 -0.26 -2.17c0.1 -0.43 -0.74 -0.5 -0.82 0a4.1 4.1 0 0 0 1.08 3.78 5.44 5.44 0 0 0 3.67 1.84 0.37 0.37 0 1 0 0.06 -0.74A4.89 4.89 0 0 1 11.89 10Z';
+  static const _path3 =
+      'M11.22 5a0.33 0.33 0 0 0 0.32 -0.33 10.56 10.56 0 0 0 0.17 -1.29 5.88 5.88 0 0 0 -0.44 -2 0.31 0.31 0 0 0 -0.56 0.22c-0.02 0.29 -0.23 3.4 0.51 3.4Z';
+  static const _path4 =
+      'M3.31 12.18c-0.44 -0.07 -0.83 -0.21 -1.25 -0.28S0 11.94 0 12.26c-0.09 0.64 2.11 0.77 3.31 0.57a0.33 0.33 0 0 0 0 -0.65Z';
+  static const _path5 =
+      'M21.94 11.93c-0.42 0.08 -0.81 0.22 -1.24 0.29a0.33 0.33 0 0 0 0 0.65A8.7 8.7 0 0 0 22 13c0.55 0 2 -0.42 2 -0.74s-1.74 -0.38 -2.06 -0.33Z';
+  static const _path6 =
+      'M12.33 19.53c0 -0.11 -0.17 -0.15 -0.38 -0.09 -0.37 0.11 -0.81 2.18 -0.09 3.11a0.32 0.32 0 0 0 0.58 -0.29 8.55 8.55 0 0 0 -0.11 -2.73Z';
+  static const _path7 =
+      'M6.67 18.05c-0.39 0.36 -2.13 1.43 -2.35 2.23 -0.05 0.18 -0.06 0.31 0 0.41a0.36 0.36 0 0 0 0.21 0.12 5.13 5.13 0 0 0 2.6 -2.35 0.32 0.32 0 0 0 -0.46 -0.41Z';
+  static const _path8 =
+      'M17.37 18.11a0.33 0.33 0 0 0 -0.5 0.42 6.2 6.2 0 0 0 0.79 1.09 7.17 7.17 0 0 0 1.84 1.24 0.32 0.32 0 0 0 0.2 -0.13c0.63 -0.58 -2.18 -2.48 -2.33 -2.62Z';
+  static const _path9 =
+      'M5.74 7.91a0.32 0.32 0 0 0 0.46 -0.45 6 6 0 0 0 -2.7 -2.19c-0.37 -0.16 -0.56 0.05 -0.54 0.21 0 0.35 1.09 1.36 1.54 1.65s0.84 0.49 1.24 0.78Z';
+  static const _path10 =
+      'M21 5.52c0 -0.15 -0.16 -0.38 -0.54 -0.2a5.9 5.9 0 0 0 -2.68 2.2 0.32 0.32 0 0 0 0.46 0.45C18.43 7.82 21 6.24 21 5.52Z';
+
+  static Path? _p1, _p2, _p3, _p4, _p5, _p6, _p7, _p8, _p9, _p10;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final blue = primaryColor ?? (isDark ? MfColors.primarySoft : MfColors.primary);
+    final dark = secondaryColor ?? (isDark ? Colors.white70 : MfColors.ink);
+
+    _p1 ??= SvgPathParser.parse(_path1);
+    _p2 ??= SvgPathParser.parse(_path2);
+    _p3 ??= SvgPathParser.parse(_path3);
+    _p4 ??= SvgPathParser.parse(_path4);
+    _p5 ??= SvgPathParser.parse(_path5);
+    _p6 ??= SvgPathParser.parse(_path6);
+    _p7 ??= SvgPathParser.parse(_path7);
+    _p8 ??= SvgPathParser.parse(_path8);
+    _p9 ??= SvgPathParser.parse(_path9);
+    _p10 ??= SvgPathParser.parse(_path10);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _MultiPathPainter(
+          paths: [_p1!, _p2!, _p3!, _p4!, _p5!, _p6!, _p7!, _p8!, _p9!, _p10!],
+          colors: [blue, dark, dark, dark, dark, dark, dark, dark, dark, dark],
+        ),
+      ),
+    );
+  }
+}
+
+/// Night Mode Icon (Weather-Night-Clear)
+class MfNightModeIcon extends StatelessWidget {
+  const MfNightModeIcon({
+    super.key,
+    this.size = 22,
+    this.primaryColor,
+    this.secondaryColor,
+  });
+
+  final double size;
+  final Color? primaryColor;
+  final Color? secondaryColor;
+
+  static const _path1 =
+      'M19 13.63a0.27 0.27 0 0 0 -0.3 0.3 8.66 8.66 0 0 1 -0.6 3.2 7.44 7.44 0 0 1 -1.6 2.7 12 12 0 0 1 -2.1 1.7 13.44 13.44 0 0 1 -2.4 1.2 5.33 5.33 0 0 1 -2.5 0.2 11.7 11.7 0 0 1 -2.5 -0.7l-1.8 -0.9c-0.6 -0.4 -1.1 -0.8 -1.6 -1.2a7.15 7.15 0 0 1 -2.2 -4.4 10.64 10.64 0 0 1 0.6 -5 10.07 10.07 0 0 1 4.5 -5.3 5.1 5.1 0 0 1 4.5 -0.5c0.2 0.1 0.3 0 0.4 -0.2s0 -0.3 -0.2 -0.4a6.08 6.08 0 0 0 -5.1 0.4 12 12 0 0 0 -5.1 5.6 10.59 10.59 0 0 0 -0.8 5.5 7.77 7.77 0 0 0 2.5 5 8.32 8.32 0 0 0 1.8 1.3 17.38 17.38 0 0 0 1.9 1 12.9 12.9 0 0 0 2.8 0.8 7 7 0 0 0 2.9 -0.3 11.88 11.88 0 0 0 2.5 -1.3 19.17 19.17 0 0 0 2.2 -1.8 7.53 7.53 0 0 0 1.7 -3 11.34 11.34 0 0 0 0.6 -3.2c0.1 -0.6 -0.1 -0.7 -0.1 -0.7Z';
+  static const _path2 =
+      'M8.3 14.43a5.54 5.54 0 0 1 -1 -2.2 7 7 0 0 1 -0.1 -2.5 7 7 0 0 1 1.7 -3.3 2.54 2.54 0 0 1 2.1 -0.9 0.27 0.27 0 0 0 0.3 -0.3 0.27 0.27 0 0 0 -0.3 -0.3 3.19 3.19 0 0 0 -2.7 1 7.12 7.12 0 0 0 -2.1 3.6 7.08 7.08 0 0 0 0 2.9 8.08 8.08 0 0 0 1.1 2.7 6.79 6.79 0 0 0 3.6 2.4 6.12 6.12 0 0 0 4.2 -0.5 6.45 6.45 0 0 0 1.6 -1.1 5 5 0 0 0 1.1 -1.6 0.36 0.36 0 1 0 -0.6 -0.4 3.45 3.45 0 0 1 -1 1.3 4.83 4.83 0 0 1 -1.4 0.9 5 5 0 0 1 -3.6 0.2 4.67 4.67 0 0 1 -2.9 -1.9Z';
+  static const _path3 =
+      'M14.2 3h0.8v0.2c0.1 0.5 0.1 1.1 0.2 1.6a0.3 0.3 0 0 0 0.6 0c0 -0.5 0.2 -1.8 0.2 -1.9a7.07 7.07 0 0 1 1.2 -0.2 0.27 0.27 0 0 0 0.3 -0.3 0.27 0.27 0 0 0 -0.3 -0.3c-0.4 -0.1 -0.7 -0.1 -1.1 -0.2 -0.1 -0.5 -0.2 -1.1 -0.3 -1.6a0.3 0.3 0 0 0 -0.6 0 8.75 8.75 0 0 0 -0.2 1.6V2a5.39 5.39 0 0 0 -1 0.3c-0.3 0.13 -0.3 0.63 0.2 0.7Z';
+  static const _path4 =
+      'M23.6 7.63a4.87 4.87 0 0 1 -1.2 -0.1L22.1 6a0.3 0.3 0 0 0 -0.6 0 7.72 7.72 0 0 1 -0.2 1.5l-1.2 0.3a0.3 0.3 0 1 0 0 0.6 5 5 0 0 0 1.2 0.2v0.3a9.36 9.36 0 0 0 0.4 1.6c0 0.2 0.2 0.3 0.4 0.3s0.3 -0.2 0.3 -0.4V8.73l1.2 -0.3c0.2 0 0.3 -0.2 0.3 -0.4s-0.2 -0.4 -0.3 -0.4Z';
+
+  static Path? _p1, _p2, _p3, _p4;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final blue = primaryColor ?? (isDark ? MfColors.primarySoft : MfColors.primary);
+    final dark = secondaryColor ?? (isDark ? Colors.white70 : MfColors.ink);
+
+    _p1 ??= SvgPathParser.parse(_path1);
+    _p2 ??= SvgPathParser.parse(_path2);
+    _p3 ??= SvgPathParser.parse(_path3);
+    _p4 ??= SvgPathParser.parse(_path4);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _MultiPathPainter(
+          paths: [_p1!, _p2!, _p3!, _p4!],
+          colors: [blue, blue, dark, dark],
+        ),
+      ),
+    );
+  }
+}
+
+/// Unified Theme Toggle Icon (renders Light or Night icon based on current state)
+class MfThemeToggleIcon extends StatelessWidget {
+  const MfThemeToggleIcon({
+    super.key,
+    required this.isDark,
+    this.size = 22,
+  });
+
+  final bool isDark;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return isDark
+        ? MfLightModeIcon(size: size)
+        : MfNightModeIcon(size: size);
+  }
+}

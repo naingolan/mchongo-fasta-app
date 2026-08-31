@@ -623,8 +623,9 @@ class _HomeShellState extends State<HomeShell> {
           IconButton(
             tooltip: isDark ? 'Use light mode' : 'Use dark mode',
             onPressed: widget.onThemeToggle,
-            icon: Icon(
-              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            icon: MfThemeToggleIcon(
+              isDark: isDark,
+              size: 22,
             ),
           ),
           const SizedBox(width: 4),
@@ -1940,7 +1941,7 @@ class _ProfilePageState extends State<ProfilePage> {
             onTap: () {},
           ),
           _ProfileTile(
-            icon: Icons.dark_mode_outlined,
+            customIcon: MfThemeToggleIcon(isDark: isDark, size: 22),
             label: 'Dark Theme',
             trailing: Switch.adaptive(
               value: isDark,
@@ -2050,13 +2051,15 @@ class EditProfilePage extends StatelessWidget {
 
 class _ProfileTile extends StatelessWidget {
   const _ProfileTile({
-    required this.icon,
+    this.icon,
+    this.customIcon,
     required this.label,
     this.onTap,
     this.trailing,
-  });
+  }) : assert(icon != null || customIcon != null);
 
-  final IconData icon;
+  final IconData? icon;
+  final Widget? customIcon;
   final String label;
   final VoidCallback? onTap;
   final Widget? trailing;
@@ -2072,7 +2075,7 @@ class _ProfileTile extends StatelessWidget {
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(icon, color: isDark ? Colors.white : MfColors.ink),
+        leading: customIcon ?? Icon(icon, color: isDark ? Colors.white : MfColors.ink),
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         trailing: trailing ?? const Icon(Icons.chevron_right_rounded),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/theme.dart';
 import 'package:mobile/widgets/mf_components.dart';
+import 'package:mobile/widgets/tab_icons.dart';
 
 class WorkerStats {
   const WorkerStats({
@@ -783,7 +784,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           const SizedBox(height: 8),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.dark_mode_outlined),
+            leading: MfThemeToggleIcon(isDark: isDark, size: 22),
             title: const Text(
               'Dark Theme',
               style: TextStyle(fontWeight: FontWeight.w600),
