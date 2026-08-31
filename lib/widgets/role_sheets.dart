@@ -35,7 +35,7 @@ Future<void> showEmployerInviteSheet({
             ),
             const SizedBox(height: 18),
             Text(
-              'Are you an employer?',
+              'Are you an Employer?',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
@@ -56,7 +56,7 @@ Future<void> showEmployerInviteSheet({
             ),
             const SizedBox(height: 24),
             MfPrimaryButton(
-              label: 'Sign in as employer',
+              label: 'Sign in as Employer',
               onPressed: () {
                 Navigator.of(context).pop();
                 onEmployerSignIn();
