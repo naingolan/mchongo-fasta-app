@@ -188,11 +188,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         actions: [
           IconButton(
             tooltip: _isBookmarked ? 'Saved' : 'Save job',
-            icon: Icon(
-              _isBookmarked
-                  ? Icons.bookmark_rounded
-                  : Icons.bookmark_border_rounded,
-              color: _isBookmarked ? MfColors.primary : null,
+            icon: MfBookmarkRibbonIcon(
+              isActive: _isBookmarked,
+              size: 22,
             ),
             onPressed: () {
               setState(() => _isBookmarked = !_isBookmarked);

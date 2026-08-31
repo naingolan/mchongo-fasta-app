@@ -686,3 +686,52 @@ class MfShopAssistantIcon extends StatelessWidget {
     );
   }
 }
+
+/// Certified Ribbon Check 2 (Bookmark / Save Icon)
+class MfBookmarkRibbonIcon extends StatelessWidget {
+  const MfBookmarkRibbonIcon({
+    super.key,
+    this.size = 22,
+    this.isActive = false,
+    this.primaryColor,
+    this.secondaryColor,
+  });
+
+  final double size;
+  final bool isActive;
+  final Color? primaryColor;
+  final Color? secondaryColor;
+
+  static const _path1 =
+      'M11.82 19.24a44.21 44.21 0 0 1 -6 3.76 10.47 10.47 0 0 1 -2.43 1 1.42 1.42 0 0 1 -0.88 -0.06 0.58 0.58 0 0 1 -0.23 -0.27A4.51 4.51 0 0 1 2 22.52c-0.23 -1.92 -0.35 -6.08 -0.33 -10.24A89.67 89.67 0 0 1 2.15 2 3.32 3.32 0 0 1 2.57 0.66 2.25 2.25 0 0 1 3.83 0.22 74 74 0 0 1 12.38 0a84.28 84.28 0 0 1 8.52 0.5 3.35 3.35 0 0 1 1 0.27 0.6 0.6 0 0 1 0.32 0.37c0.23 0.67 0 6 -0.35 11.27 -0.29 4 -0.66 8.07 -0.94 10a3.71 3.71 0 0 1 -0.36 1.3 0.71 0.71 0 0 1 -0.59 0.19 8.38 8.38 0 0 1 -2.59 -1 36.75 36.75 0 0 1 -5.58 -3.61Zm9.4 -17.56c-0.17 0 -0.42 0 -0.66 -0.07 -1.95 -0.26 -6.24 -0.43 -10.08 -0.46a56.83 56.83 0 0 0 -6.68 0.22l-0.41 0.08a8.1 8.1 0 0 0 -0.23 1.4C3 4.52 2.8 7.17 2.71 10c-0.15 4.64 -0.15 9.81 0.06 12.18 0 0.46 0.27 0.89 0.21 1a1.85 1.85 0 0 0 0.41 -0.07 15.06 15.06 0 0 0 3 -1.29 34.89 34.89 0 0 0 5.24 -3.31c0.47 -0.37 0.16 0.18 4.43 2.66a22.72 22.72 0 0 0 3.42 1.7 2.72 2.72 0 0 0 0.43 0.11c0 -0.17 0.17 -0.46 0.21 -0.78 0.26 -1.86 0.57 -5.88 0.8 -9.9a106.07 106.07 0 0 0 0.3 -10.69Z';
+
+  static const _path2 =
+      'M6.71 11.94A28.23 28.23 0 0 0 9 14.11a2.64 2.64 0 0 0 1.48 0.63 2.61 2.61 0 0 0 1.51 -0.9 19.21 19.21 0 0 0 2.1 -2.59 31.63 31.63 0 0 0 3.38 -6.2 0.36 0.36 0 0 0 -0.2 -0.44 0.34 0.34 0 0 0 -0.44 0.2 33.43 33.43 0 0 1 -3 4.85 36.52 36.52 0 0 1 -2.41 3.16 5.67 5.67 0 0 1 -0.78 0.78c-0.08 0.07 -0.12 0.14 -0.18 0.14a2.37 2.37 0 0 1 -1.32 -0.58c-0.67 -0.47 -1.38 -1.11 -2.07 -1.67a0.3 0.3 0 0 0 -0.42 0 0.31 0.31 0 0 0 0 0.43Z';
+
+  static Path? _p1;
+  static Path? _p2;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final blue = primaryColor ?? (isDark ? MfColors.primarySoft : MfColors.primary);
+    final dark = secondaryColor ?? (isDark ? Colors.white70 : MfColors.ink);
+
+    final ribbonColor = isActive ? blue : dark;
+    final checkColor = isActive ? (isDark ? Colors.white : MfColors.primary) : blue;
+
+    _p1 ??= SvgPathParser.parse(_path1);
+    _p2 ??= SvgPathParser.parse(_path2);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _MultiPathPainter(
+          paths: [_p1!, _p2!],
+          colors: [ribbonColor, checkColor],
+        ),
+      ),
+    );
+  }
+}
