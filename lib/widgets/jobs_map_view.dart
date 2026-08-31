@@ -4,6 +4,7 @@ import 'package:mobile/models/job.dart';
 import 'package:mobile/theme.dart';
 import 'package:mobile/widgets/mf_components.dart';
 import 'package:mobile/widgets/mf_google_map.dart';
+import 'package:mobile/widgets/tab_icons.dart';
 
 class JobsMapView extends StatefulWidget {
   const JobsMapView({
@@ -94,48 +95,130 @@ class _SelectedJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Material(
-      color: Theme.of(context).cardColor,
-      elevation: 8,
+      color: theme.cardColor,
+      elevation: 12,
       shadowColor: isDark
-          ? Colors.black.withValues(alpha: 0.4)
-          : MfColors.ink.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(22),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    job.title,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+          ? Colors.black.withValues(alpha: 0.5)
+          : MfColors.ink.withValues(alpha: 0.16),
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  if (job.verified)
+                    const MfVerifiedTaskIcon(size: 20)
+                  else
+                    Icon(
+                      Icons.pending_actions_outlined,
+                      color: MfColors.muted,
+                      size: 20,
+                    ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      job.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
-                Text(
-                  job.pay,
-                  style: TextStyle(
-                    color: isDark ? MfColors.primarySoft : MfColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${job.category} • ${job.distance} • ${job.time}',
-              style: TextStyle(
-                color: isDark ? MfColors.mutedDark : MfColors.muted,
-                fontSize: 13,
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            MfPrimaryButton(label: 'View job', onPressed: onOpen),
-          ],
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.work_outline, size: 14, color: MfColors.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        job.category,
+                        style: TextStyle(
+                          color: MfColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.location_on_outlined, size: 14, color: isDark ? MfColors.primarySoft : MfColors.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        job.distance,
+                        style: TextStyle(
+                          color: isDark ? MfColors.primarySoft : MfColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
+                      const SizedBox(width: 3),
+                      Text(
+                        job.rating,
+                        style: TextStyle(
+                          color: isDark ? Colors.white70 : MfColors.ink,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    job.pay,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: MfColors.primary,
+                      fontSize: 20,
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const MfTimeClockIcon(size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        job.time,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: MfColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              MfPrimaryButton(label: 'View Job', onPressed: onOpen),
+            ],
+          ),
         ),
       ),
     );
