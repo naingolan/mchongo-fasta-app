@@ -100,39 +100,44 @@ Future<void> showLoginToGetJobSheet({
       return _MfSheetShell(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const _SheetHandle(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Container(
-              width: 52,
-              height: 52,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? MfColors.surfaceDarkElevated : const Color(0xFFEEF2FF),
-                borderRadius: BorderRadius.circular(16),
+                color: isDark
+                    ? MfColors.surfaceDarkElevated
+                    : const Color(0xFFEEF2FF),
+                shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.lock_open_rounded,
-                color: isDark ? MfColors.primarySoft : MfColors.primary,
+              child: const MfLogoutDoorIcon(
+                size: 76,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             Text(
               title,
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: -0.4,
                   ),
             ),
             const SizedBox(height: 8),
-            Text(
-              body,
-              style: TextStyle(
-                color: isDark ? MfColors.mutedDark : MfColors.muted,
-                height: 1.45,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                body,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? MfColors.mutedDark : MfColors.muted,
+                  height: 1.45,
+                ),
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 24),
             MfPrimaryButton(
               label: 'Sign In to Continue',
               onPressed: () {
@@ -142,7 +147,7 @@ Future<void> showLoginToGetJobSheet({
             ),
             const SizedBox(height: 10),
             MfSecondaryButton(
-              label: 'Not now',
+              label: 'No, Thanks',
               onPressed: () => Navigator.of(context).pop(),
             ),
             const SizedBox(height: 8),
