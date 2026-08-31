@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/models/job.dart';
 import 'package:mobile/models/user_role.dart';
@@ -1063,7 +1064,29 @@ class _ViewTab extends StatelessWidget {
   }
 }
 
-class HeroPanel extends StatelessWidget {
+class _HeroSlideItem {
+  const _HeroSlideItem({
+    required this.pillLabel,
+    this.pillIcon,
+    this.customPillIcon,
+    required this.badgeText,
+    required this.title,
+    required this.subtitle,
+    required this.buttonLabel,
+    required this.buttonIcon,
+  });
+
+  final String pillLabel;
+  final IconData? pillIcon;
+  final Widget? customPillIcon;
+  final String badgeText;
+  final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final IconData buttonIcon;
+}
+
+class HeroPanel extends StatefulWidget {
   const HeroPanel({
     super.key,
     required this.isWorker,
@@ -1076,11 +1099,121 @@ class HeroPanel extends StatelessWidget {
   final VoidCallback? onPrimaryAction;
 
   @override
+  State<HeroPanel> createState() => _HeroPanelState();
+}
+
+class _HeroPanelState extends State<HeroPanel> {
+  late final PageController _pageController;
+  Timer? _timer;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!_pageController.hasClients) return;
+      final slidesCount = _getSlides().length;
+      final nextPage = (_currentPage + 1) % slidesCount;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  List<_HeroSlideItem> _getSlides() {
+    if (widget.isWorker) {
+      return [
+        _HeroSlideItem(
+          pillLabel: !widget.loggedIn ? 'Browse as guest' : 'Worker mode',
+          pillIcon: Icons.shield_outlined,
+          badgeText: '⚡ Daily Work in Dar',
+          title: 'Find verified daily work around Dar.',
+          subtitle: 'Browse open mchongo below. Tap a job and sign in when you’re ready to apply.',
+          buttonLabel: widget.loggedIn ? 'Find mchongo' : 'Browse jobs',
+          buttonIcon: Icons.work_outline,
+        ),
+        const _HeroSlideItem(
+          pillLabel: 'Worker Earnings',
+          customPillIcon: MfSafePayIcon(size: 16),
+          badgeText: '💰 Daily Payouts',
+          title: 'Asha earned TZS 145,000 this week!',
+          subtitle: 'Workers in Mikocheni, Masaki & Sinza receive instant earnings directly to M-Pesa & Tigopesa.',
+          buttonLabel: 'Start Earning Today',
+          buttonIcon: Icons.trending_up_rounded,
+        ),
+        const _HeroSlideItem(
+          pillLabel: 'Guaranteed Safe Pay',
+          customPillIcon: MfVerifiedTaskIcon(size: 16),
+          badgeText: '🔒 100% Escrow',
+          title: '100% Escrow Protection on every job.',
+          subtitle: 'Funds are locked securely before you start. Payment releases immediately upon your completion.',
+          buttonLabel: 'How Safe Pay Works',
+          buttonIcon: Icons.lock_outline_rounded,
+        ),
+        const _HeroSlideItem(
+          pillLabel: 'Fast Verification',
+          pillIcon: Icons.bolt_rounded,
+          badgeText: '⭐ 98% Match Rate',
+          title: 'Get verified to unlock top paying gigs.',
+          subtitle: 'Verified workers get 4x more employer booking requests with direct fast matching.',
+          buttonLabel: 'Get Verified Fast',
+          buttonIcon: Icons.verified_user_outlined,
+        ),
+      ];
+    } else {
+      return [
+        const _HeroSlideItem(
+          pillLabel: 'Employer mode',
+          pillIcon: Icons.business_center_outlined,
+          badgeText: '⚡ Under 15 mins',
+          title: 'Hire reliable help in minutes.',
+          subtitle: 'Post a task, review vetted workers, track completion, then rate and pay securely.',
+          buttonLabel: 'Post task',
+          buttonIcon: Icons.add_task_outlined,
+        ),
+        const _HeroSlideItem(
+          pillLabel: 'Verified Talent',
+          customPillIcon: MfVerifiedTaskIcon(size: 16),
+          badgeText: '⭐ 4.9 Average Rating',
+          title: 'Over 8,400 background-checked workers.',
+          subtitle: 'From cleaning and logistics to repairs, hire top-rated professionals ready in your area.',
+          buttonLabel: 'Explore Workers',
+          buttonIcon: Icons.people_outline_rounded,
+        ),
+        const _HeroSlideItem(
+          pillLabel: 'Safe Escrow',
+          customPillIcon: MfSafePayIcon(size: 16),
+          badgeText: '🔒 Zero Advance Risk',
+          title: 'Pay only when 100% satisfied.',
+          subtitle: 'Your payment is safely held in escrow until the job is completed to your satisfaction.',
+          buttonLabel: 'Post Protected Task',
+          buttonIcon: Icons.security_rounded,
+        ),
+      ];
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final slides = _getSlides();
 
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         gradient: const LinearGradient(
@@ -1097,76 +1230,127 @@ class HeroPanel extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              StatusPill(
-                icon: Icons.shield_outlined,
-                label: !loggedIn && isWorker
-                    ? 'Browse as guest'
-                    : isWorker
-                        ? 'Worker mode'
-                        : 'Employer mode',
-                onDark: true,
-              ),
-              const Spacer(),
-              const Icon(Icons.near_me_outlined, color: Colors.white),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            isWorker
-                ? 'Find verified daily work around Dar.'
-                : 'Hire reliable help in minutes.',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
+          SizedBox(
+            height: 252,
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() => _currentPage = index);
+              },
+              itemCount: slides.length,
+              itemBuilder: (context, index) {
+                final slide = slides[index];
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          StatusPill(
+                            icon: slide.pillIcon ?? Icons.shield_outlined,
+                            customIcon: slide.customPillIcon,
+                            label: slide.pillLabel,
+                            onDark: true,
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              slide.badgeText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            slide.title,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            slide.subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: MfColors.primary,
+                                minimumSize: const Size.fromHeight(46),
+                                elevation: 0,
+                              ),
+                              onPressed: widget.onPrimaryAction,
+                              icon: Icon(slide.buttonIcon, size: 18),
+                              label: Text(
+                                slide.buttonLabel,
+                                style: const TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          IconButton.filled(
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.white.withValues(alpha: 0.18),
+                              foregroundColor: Colors.white,
+                            ),
+                            tooltip: 'Open scanner',
+                            onPressed: () {},
+                            icon: const Icon(Icons.qr_code_scanner_outlined, size: 20),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            isWorker
-                ? 'Browse open mchongo below. Tap a job and sign in when you’re ready to apply.'
-                : 'Post a task, review vetted workers, track completion, then rate and pay securely.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.82),
-              height: 1.45,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(slides.length, (index) {
+                final isActive = index == _currentPage;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: isActive ? 20 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
             ),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: MfColors.primary,
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  onPressed: onPrimaryAction,
-                  icon: Icon(
-                    isWorker ? Icons.work_outline : Icons.add_task_outlined,
-                  ),
-                  label: Text(
-                    isWorker
-                        ? (loggedIn ? 'Find mchongo' : 'Browse jobs')
-                        : 'Post task',
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              IconButton.filled(
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.18),
-                  foregroundColor: Colors.white,
-                ),
-                tooltip: 'Open scanner',
-                onPressed: () {},
-                icon: const Icon(Icons.qr_code_scanner_outlined),
-              ),
-            ],
           ),
         ],
       ),
