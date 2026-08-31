@@ -25,18 +25,6 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
 
   final _phone = TextEditingController(text: '+255 ');
 
-  late final Map<String, bool> _setupDone = widget.role == UserRole.employer
-      ? {
-          'Business or household name': false,
-          'Service area in Dar': false,
-          'Payment method': false,
-        }
-      : {
-          'Full name and area': false,
-          'Work categories': false,
-          'National ID (NIDA)': false,
-        };
-
   @override
   void dispose() {
     _phone.dispose();
@@ -110,10 +98,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         );
       default:
         return _SetupStep(
-          items: _setupDone,
-          onToggle: (key) {
-            setState(() => _setupDone[key] = !(_setupDone[key] ?? false));
-          },
+          role: widget.role,
           onContinue: _finish,
         );
     }
@@ -358,49 +343,204 @@ class _OtpStepState extends State<_OtpStep> {
   }
 }
 
-class _SetupStep extends StatelessWidget {
+class _SetupStep extends StatefulWidget {
   const _SetupStep({
-    required this.items,
-    required this.onToggle,
+    required this.role,
     required this.onContinue,
   });
 
-  final Map<String, bool> items;
-  final ValueChanged<String> onToggle;
+  final UserRole role;
   final VoidCallback onContinue;
 
   @override
+  State<_SetupStep> createState() => _SetupStepState();
+}
+
+class _SetupStepState extends State<_SetupStep> {
+  final _nameController = TextEditingController();
+  final _nidaController = TextEditingController();
+  String _selectedArea = 'Mikocheni';
+  final Set<String> _selectedCategories = {'Domestic'};
+  String? _error;
+
+  static const _areas = [
+    'Mikocheni',
+    'Masaki',
+    'Kariakoo',
+    'Sinza',
+    'Kinondoni',
+    'Posta',
+    'Mbezi Beach',
+    'Tabata',
+  ];
+
+  static const _categories = [
+    'Domestic',
+    'Logistics',
+    'Care',
+    'Technical',
+  ];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _nidaController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_nameController.text.trim().isEmpty) {
+      setState(() => _error = 'Please enter your full name.');
+      return;
+    }
+    if (_selectedCategories.isEmpty) {
+      setState(() => _error = 'Please select at least one work category.');
+      return;
+    }
+    setState(() => _error = null);
+    widget.onContinue();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isWorker = widget.role == UserRole.worker;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Let’s get you set up',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'We need a few details to verify your identity and keep the marketplace safe.',
-          style: TextStyle(color: MfColors.muted, height: 1.45),
-        ),
-        const SizedBox(height: 20),
-        ...items.entries.map((entry) {
-          return Column(
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.zero,
             children: [
-              MfChecklistRow(
-                label: entry.key,
-                done: entry.value,
-                onTap: () => onToggle(entry.key),
+              Text(
+                isWorker ? 'Set up your profile' : 'Set up employer profile',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
               ),
-              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Text(
+                isWorker
+                    ? 'Enter your name, area in Dar, and the work categories you specialize in.'
+                    : 'Enter your name or business name, primary location, and services needed.',
+                style: TextStyle(
+                  color: isDark ? MfColors.mutedDark : MfColors.muted,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 24),
+              MfTextField(
+                controller: _nameController,
+                label: isWorker ? 'Full Name' : 'Business or Full Name',
+                hintText: isWorker ? 'e.g. Asha Mwinyi' : 'e.g. Masaki Logistics Ltd',
+                icon: Icons.person_outline,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Primary Area in Dar',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: isDark ? Colors.white70 : MfColors.ink,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _areas.map((area) {
+                  final isSelected = _selectedArea == area;
+                  return ChoiceChip(
+                    label: Text(area),
+                    selected: isSelected,
+                    checkmarkColor: Colors.white,
+                    selectedColor: MfColors.primary,
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white70 : MfColors.ink),
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                    onSelected: (_) {
+                      setState(() => _selectedArea = area);
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                isWorker ? 'Work Categories' : 'Services Needed',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: isDark ? Colors.white70 : MfColors.ink,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _categories.map((cat) {
+                  final isSelected = _selectedCategories.contains(cat);
+                  return FilterChip(
+                    label: Text(cat),
+                    selected: isSelected,
+                    checkmarkColor: Colors.white,
+                    selectedColor: MfColors.primary,
+                    backgroundColor: isDark
+                        ? MfColors.surfaceDarkElevated
+                        : const Color(0xFFF3F4F6),
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white70 : MfColors.ink),
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedCategories.add(cat);
+                        } else {
+                          if (_selectedCategories.length > 1) {
+                            _selectedCategories.remove(cat);
+                          }
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              MfTextField(
+                controller: _nidaController,
+                label: 'National ID / NIDA (Optional)',
+                hintText: '19901234-12345-00001-12',
+                icon: Icons.badge_outlined,
+                keyboardType: TextInputType.number,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 14),
+                Text(
+                  _error!,
+                  style: const TextStyle(
+                    color: Color(0xFFDC2626),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
             ],
-          );
-        }),
-        const Spacer(),
-        MfPrimaryButton(label: 'Continue', onPressed: onContinue),
+          ),
+        ),
+        const SizedBox(height: 12),
+        MfPrimaryButton(
+          label: 'Complete Setup',
+          onPressed: _submit,
+        ),
       ],
     );
   }
