@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/theme.dart';
+import 'package:mobile/widgets/tab_icons.dart';
 
 /// Shared MchongoFasta UI primitives from the design system.
 class MfCircleIconButton extends StatelessWidget {
@@ -663,6 +664,7 @@ Future<void> showMfSuccessDialog({
   required String title,
   required String message,
   String actionLabel = 'Done',
+  Widget? customIcon,
   VoidCallback? onDone,
 }) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -680,17 +682,22 @@ Future<void> showMfSuccessDialog({
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 72,
-                height: 72,
-                decoration: const BoxDecoration(
-                  color: MfColors.primary,
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? MfColors.surfaceDarkElevated
+                      : const Color(0xFFE3EDFF),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDark
+                        ? MfColors.primarySoft.withValues(alpha: 0.35)
+                        : const Color(0xFFBFD5FF),
+                    width: 1.5,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 36,
-                ),
+                alignment: Alignment.center,
+                child: customIcon ?? const MfWorkerRatingManIcon(size: 48),
               ),
               const SizedBox(height: 18),
               Text(
