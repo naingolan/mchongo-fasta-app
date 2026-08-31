@@ -292,9 +292,25 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       ),
                       const SizedBox(height: 16),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? MfColors.primary.withValues(alpha: 0.25)
+                                  : const Color(0xFFE3EDFF),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark
+                                    ? MfColors.primarySoft.withValues(alpha: 0.3)
+                                    : const Color(0xFFBFD5FF),
+                                width: 1,
+                              ),
+                            ),
+                            child: const MfSafePayIcon(size: 24),
+                          ),
+                          const SizedBox(width: 10),
                           Text(
                             job.pay,
                             style: theme.textTheme.headlineMedium?.copyWith(
@@ -327,13 +343,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 12,
+                    vertical: 14,
                   ),
                   decoration: BoxDecoration(
                     color: isDark
                         ? MfColors.surfaceDarkElevated
                         : const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isDark
                           ? MfColors.primarySoft.withValues(alpha: 0.25)
@@ -343,18 +359,24 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? MfColors.primaryDark
-                              : MfColors.primary.withValues(alpha: 0.12),
+                              ? MfColors.primary.withValues(alpha: 0.28)
+                              : const Color(0xFFE3EDFF),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark
+                                ? MfColors.primarySoft.withValues(alpha: 0.35)
+                                : const Color(0xFFBFD5FF),
+                            width: 1.5,
+                          ),
                         ),
                         child: const MfSafePayIcon(
-                          size: 22,
+                          size: 30,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,12 +385,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                               'Guaranteed Safe Pay',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: isDark
                                     ? Colors.white
                                     : MfColors.primaryDark,
                               ),
                             ),
+                            const SizedBox(height: 2),
                             Text(
                               'Funds secured in escrow before work begins.',
                               style: TextStyle(
