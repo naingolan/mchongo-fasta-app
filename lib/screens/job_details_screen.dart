@@ -729,7 +729,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                 ),
                               )
                             : const Text(
-                                'Apply for Mchongo',
+                                'Apply',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 16,

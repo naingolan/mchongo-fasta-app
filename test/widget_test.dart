@@ -94,10 +94,10 @@ void main() {
     // Verify Job Details screen is shown with short job title in AppBar
     expect(find.text('Task Description'), findsOneWidget);
     expect(find.text('Requirements'), findsOneWidget);
-    expect(find.text('Apply for Mchongo'), findsOneWidget);
+    expect(find.text('Apply'), findsOneWidget);
 
     // Tap apply as guest -> opens sign in sheet
-    await tester.tap(find.text('Apply for Mchongo'));
+    await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
     expect(find.text('Sign in to get this job'), findsOneWidget);
   });
