@@ -96,10 +96,10 @@ void main() {
     expect(find.text('Requirements'), findsOneWidget);
     expect(find.text('Apply'), findsOneWidget);
 
-    // Tap apply as guest -> opens sign in sheet
+    // Tap apply as guest -> opens sign in sheet (both title and button say 'Sign In to Continue')
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
-    expect(find.text('Sign in to get this job'), findsOneWidget);
+    expect(find.text('Sign In to Continue'), findsNWidgets(2));
   });
 }
 

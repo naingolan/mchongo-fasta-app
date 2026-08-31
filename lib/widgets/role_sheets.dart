@@ -82,7 +82,7 @@ Future<void> showLoginToGetJobSheet({
   required BuildContext context,
   required VoidCallback onSignIn,
   String? jobTitle,
-  String title = 'Sign in to get this job',
+  String title = 'Sign In to Continue',
   String? message,
 }) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -134,7 +134,7 @@ Future<void> showLoginToGetJobSheet({
             ),
             const SizedBox(height: 22),
             MfPrimaryButton(
-              label: 'Sign in to continue',
+              label: 'Sign In to Continue',
               onPressed: () {
                 Navigator.of(context).pop();
                 onSignIn();

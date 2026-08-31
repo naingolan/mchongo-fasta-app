@@ -479,7 +479,7 @@ class _HomeShellState extends State<HomeShell> {
       }
       await showLoginToGetJobSheet(
         context: context,
-        title: 'Sign in to continue',
+        title: 'Sign In to Continue',
         message:
             'Create or sign in to access profile, wallet, and account tools.',
         onSignIn: () => _startAuth(UserRole.worker),
