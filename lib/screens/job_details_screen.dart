@@ -206,7 +206,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           ),
           IconButton(
             tooltip: 'Share',
-            icon: const Icon(Icons.share_outlined),
+            icon: const MfShareNetworkIcon(size: 20),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(

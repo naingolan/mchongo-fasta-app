@@ -735,3 +735,62 @@ class MfBookmarkRibbonIcon extends StatelessWidget {
     );
   }
 }
+
+/// Logic Connection 2 (Share / Network Icon)
+class MfShareNetworkIcon extends StatelessWidget {
+  const MfShareNetworkIcon({
+    super.key,
+    this.size = 20,
+    this.primaryColor,
+    this.secondaryColor,
+  });
+
+  final double size;
+  final Color? primaryColor;
+  final Color? secondaryColor;
+
+  static const _path1 =
+      'm9.64 9.59 1.13 -0.48L12 8.59l1.19 -0.53 1.22 -0.56c0.68 -0.74 0.81 -1.17 -0.26 -0.88 -0.46 0.13 -0.92 0.28 -1.37 0.44s-0.83 0.3 -1.24 0.48 -0.81 0.37 -1.2 0.58 -0.74 0.42 -1.1 0.65c-0.71 0.6 -1.02 1.07 0.4 0.82Z';
+
+  static const _path2 =
+      'M8.84 12.8A4.33 4.33 0 0 0 7.1 8.5a4.75 4.75 0 0 0 -2.4 -0.63 5 5 0 0 0 -4 1.76 3.48 3.48 0 0 0 -0.7 1.88 5.72 5.72 0 0 0 0.54 2.78 4.1 4.1 0 0 0 3 2.18 4.42 4.42 0 0 0 5.3 -3.67ZM6.6 14.88a3.62 3.62 0 0 1 -2.8 0.51 3.05 3.05 0 0 1 -2.21 -1.6A4.84 4.84 0 0 1 1.14 12a2.81 2.81 0 0 1 0.37 -1.72 4.08 4.08 0 0 1 3.17 -1.61c3.75 -0.16 3.51 3.25 3.36 4a3.71 3.71 0 0 1 -1.44 2.21Z';
+
+  static const _path3 =
+      'M14.06 16.87c-0.48 -0.25 -1 -0.48 -1.44 -0.7 -0.69 -0.31 -1.4 -0.56 -2.1 -0.86 -0.29 -0.1 -0.62 -0.25 -1 -0.39 -1 -0.47 -1.25 -0.28 -0.56 0.7 0.39 0.24 0.76 0.5 1.09 0.68 0.7 0.31 1.39 0.63 2.1 0.91 0.47 0.18 1 0.34 1.42 0.51 1.18 0.28 1.17 -0.11 0.49 -0.85Z';
+
+  static const _path4 =
+      'M19.2 0.33a5.4 5.4 0 0 0 -3.69 2.58 4.08 4.08 0 0 0 -0.56 3 6.4 6.4 0 0 0 0.79 1.62A4.55 4.55 0 0 0 19.19 9a4.78 4.78 0 0 0 3.45 -1.38A5.17 5.17 0 0 0 24 4.7 4 4 0 0 0 19.2 0.33Zm4 4.26A4.3 4.3 0 0 1 22 7a3.88 3.88 0 0 1 -2.76 1 3.45 3.45 0 0 1 -2.59 -1.16 2.85 2.85 0 0 1 -0.2 -3.34 4.52 4.52 0 0 1 2.92 -2.31 3 3 0 0 1 3.8 3.4Z';
+
+  static const _path5 =
+      'M22.89 16.13a0.34 0.34 0 1 0 -0.5 0.46 2.27 2.27 0 0 1 0.49 1 4 4 0 0 1 0.12 1.13 4.38 4.38 0 0 1 -0.31 1.48 3.41 3.41 0 0 1 -0.82 1.22 4.17 4.17 0 0 1 -2.74 1.19 3 3 0 0 1 -2.56 -1.06 3.3 3.3 0 0 1 -0.63 -2.92A4.67 4.67 0 0 1 17.65 16a4.06 4.06 0 0 1 2 -0.73 2.23 2.23 0 0 1 1.91 0.66 0.32 0.32 0 0 0 0.43 0 0.29 0.29 0 0 0 0 -0.42 2.7 2.7 0 0 0 -1.88 -1 4.88 4.88 0 0 0 -3 0.71 5.56 5.56 0 0 0 -1.95 2.24 6.22 6.22 0 0 0 -0.42 1.54 4.28 4.28 0 0 0 0.9 3.23 4 4 0 0 0 3.54 1.44 5.15 5.15 0 0 0 3.35 -1.63 4.53 4.53 0 0 0 0.95 -1.57 5.61 5.61 0 0 0 0.29 -1.77 4.86 4.86 0 0 0 -0.18 -1.37 3.14 3.14 0 0 0 -0.7 -1.2Z';
+
+  static Path? _p1;
+  static Path? _p2;
+  static Path? _p3;
+  static Path? _p4;
+  static Path? _p5;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final blue = primaryColor ?? (isDark ? MfColors.primarySoft : MfColors.primary);
+    final dark = secondaryColor ?? (isDark ? Colors.white70 : MfColors.ink);
+
+    _p1 ??= SvgPathParser.parse(_path1);
+    _p2 ??= SvgPathParser.parse(_path2);
+    _p3 ??= SvgPathParser.parse(_path3);
+    _p4 ??= SvgPathParser.parse(_path4);
+    _p5 ??= SvgPathParser.parse(_path5);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _MultiPathPainter(
+          paths: [_p1!, _p2!, _p3!, _p4!, _p5!],
+          colors: [dark, blue, dark, blue, blue],
+        ),
+      ),
+    );
+  }
+}
