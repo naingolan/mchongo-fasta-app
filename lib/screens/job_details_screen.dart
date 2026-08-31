@@ -30,6 +30,16 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   bool _isBookmarked = false;
   bool _isApplying = false;
 
+  String _getEmployerInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+    }
+    return 'VE';
+  }
+
   Future<void> _handleApply() async {
     if (!widget.loggedIn) {
       await showLoginToGetJobSheet(
@@ -594,15 +604,31 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: MfColors.primary,
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? MfColors.primary.withValues(alpha: 0.25)
+                              : const Color(0xFFE3EDFF),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark
+                                ? MfColors.primarySoft.withValues(alpha: 0.35)
+                                : const Color(0xFFBFD5FF),
+                            width: 1.5,
+                          ),
+                        ),
+                        alignment: Alignment.center,
                         child: Text(
-                          job.employerName.characters.first,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          _getEmployerInitials(job.employerName),
+                          style: TextStyle(
+                            color: isDark
+                                ? MfColors.primarySoft
+                                : MfColors.primary,
                             fontWeight: FontWeight.w800,
-                            fontSize: 18,
+                            fontSize: 16,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
