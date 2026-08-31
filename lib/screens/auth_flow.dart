@@ -260,9 +260,8 @@ class _OtpStepState extends State<_OtpStep> {
             ],
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 32),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(_length, (index) {
             final isFocused = _focusNodes[index].hasFocus;
             final hasValue = _controllers[index].text.isNotEmpty;
@@ -273,56 +272,59 @@ class _OtpStepState extends State<_OtpStep> {
                     : (isDark ? MfColors.lineDark : const Color(0xFFE2E8F0));
             final bgColor = isDark ? MfColors.surfaceDarkElevated : Colors.white;
 
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: 50,
-              height: 60,
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: borderColor,
-                  width: (isFocused || hasValue) ? 2.0 : 1.2,
+            return Expanded(
+              child: Container(
+                margin: EdgeInsets.only(
+                  right: index < _length - 1 ? 8.0 : 0.0,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isFocused
-                        ? MfColors.primary.withValues(alpha: 0.2)
-                        : (isDark
-                            ? Colors.black.withValues(alpha: 0.2)
-                            : MfColors.ink.withValues(alpha: 0.04)),
-                    blurRadius: isFocused ? 12 : 6,
-                    offset: const Offset(0, 3),
+                height: 56,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: borderColor,
+                    width: (isFocused || hasValue) ? 2.0 : 1.2,
                   ),
-                ],
-              ),
-              child: Center(
-                child: TextField(
-                  controller: _controllers[index],
-                  focusNode: _focusNodes[index],
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  maxLength: 1,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? Colors.white : MfColors.ink,
+                  boxShadow: [
+                    BoxShadow(
+                      color: isFocused
+                          ? MfColors.primary.withValues(alpha: 0.18)
+                          : (isDark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : MfColors.ink.withValues(alpha: 0.04)),
+                      blurRadius: isFocused ? 10 : 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: TextField(
+                    controller: _controllers[index],
+                    focusNode: _focusNodes[index],
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    maxLength: 1,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : MfColors.ink,
+                    ),
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      counterText: '',
+                      filled: false,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                    ),
+                    onChanged: (value) {
+                      if (value.isEmpty && index > 0) {
+                        _focusNodes[index - 1].requestFocus();
+                      }
+                      _onChanged(index, value);
+                    },
                   ),
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(
-                    counterText: '',
-                    filled: false,
-                    contentPadding: EdgeInsets.zero,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
-                  onChanged: (value) {
-                    if (value.isEmpty && index > 0) {
-                      _focusNodes[index - 1].requestFocus();
-                    }
-                    _onChanged(index, value);
-                  },
                 ),
               ),
             );
