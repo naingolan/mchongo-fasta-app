@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:mobile/theme.dart';
 import 'package:mobile/widgets/location_picker.dart';
 import 'package:mobile/widgets/mf_components.dart';
@@ -110,8 +111,21 @@ class _PostTaskFlowScreenState extends State<PostTaskFlowScreen> {
       landmark: _landmark.text.trim(),
     );
 
+    // Post to backend database
+    await MobileApiService.instance.postJob(
+      title: task.title,
+      category: task.category,
+      location: task.area,
+      budgetTzs: task.budgetTzs,
+      description: task.details.isEmpty ? 'Task posted via MchongoFasta mobile app' : task.details,
+      scheduledFor: task.whenLabel,
+      latitude: task.latitude,
+      longitude: task.longitude,
+    );
+
     widget.onPosted?.call(task);
 
+    if (!mounted) return;
     await showMfSuccessDialog(
       context: context,
       title: 'Task posted',

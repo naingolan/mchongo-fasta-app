@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/models/job.dart';
 import 'package:mobile/models/user_role.dart';
+import 'package:mobile/models/worker.dart';
 import 'package:mobile/screens/auth_flow.dart';
 import 'package:mobile/screens/job_details_screen.dart';
 import 'package:mobile/screens/post_task_flow.dart';
 import 'package:mobile/screens/worker_profile.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:mobile/theme.dart';
 import 'package:mobile/widgets/brand_logo.dart';
 import 'package:mobile/widgets/jobs_map_view.dart';
@@ -793,93 +795,40 @@ enum _DiscoverView { map, list }
 class _DiscoverPageState extends State<DiscoverPage> {
   String _category = 'All';
   _DiscoverView _view = _DiscoverView.map;
+  List<Job> _jobs = [];
+  bool _isLoading = true;
 
-  final List<Job> _jobs = const [
-    Job(
-      title: 'House cleaning in Mikocheni',
-      category: 'Domestic',
-      pay: 'TZS 35,000',
-      distance: '1.8 km',
-      time: 'Today 10:30',
-      rating: '4.9',
-      verified: true,
-      latitude: -6.7550,
-      longitude: 39.2500,
-    ),
-    Job(
-      title: 'Errand run to Kariakoo',
-      category: 'Logistics',
-      pay: 'TZS 18,000',
-      distance: '3.4 km',
-      time: 'Today 13:00',
-      rating: '4.7',
-      verified: true,
-      latitude: -6.8235,
-      longitude: 39.2750,
-    ),
-    Job(
-      title: 'Paint two office rooms in Masaki',
-      category: 'Technical',
-      pay: 'TZS 95,000',
-      distance: '5.2 km',
-      time: 'Tomorrow',
-      rating: '4.8',
-      verified: true,
-      latitude: -6.7450,
-      longitude: 39.2800,
-    ),
-    Job(
-      title: 'Elderly care assistance in Kinondoni',
-      category: 'Care',
-      pay: 'TZS 50,000',
-      distance: '2.4 km',
-      time: 'Today 15:00',
-      rating: '4.9',
-      verified: true,
-      latitude: -6.7800,
-      longitude: 39.2600,
-    ),
-    Job(
-      title: 'Laundry & deep kitchen cleaning in Sinza',
-      category: 'Domestic',
-      pay: 'TZS 40,000',
-      distance: '3.1 km',
-      time: 'Today 11:30',
-      rating: '4.8',
-      verified: true,
-      latitude: -6.7850,
-      longitude: 39.2250,
-    ),
-    Job(
-      title: 'AC repair and servicing in Posta',
-      category: 'Technical',
-      pay: 'TZS 75,000',
-      distance: '4.0 km',
-      time: 'Today 14:00',
-      rating: '4.9',
-      verified: true,
-      latitude: -6.8160,
-      longitude: 39.2900,
-    ),
-    Job(
-      title: 'Furniture moving support in Mbezi Beach',
-      category: 'Logistics',
-      pay: 'TZS 60,000',
-      distance: '6.5 km',
-      time: 'Tomorrow',
-      rating: '4.7',
-      verified: true,
-      latitude: -6.7000,
-      longitude: 39.2300,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchJobs();
+  }
+
+  Future<void> _fetchJobs() async {
+    final jobs = await MobileApiService.instance.fetchJobs(category: _category);
+    if (mounted) {
+      setState(() {
+        _jobs = jobs;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _onCategoryChanged(String category) {
+    if (_category == category) return;
+    setState(() {
+      _category = category;
+      _isLoading = true;
+    });
+    _fetchJobs();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isWorker = widget.role == UserRole.worker;
     final visibleJobs = _category == 'All'
         ? _jobs
-        : _jobs.where((job) => job.category == _category).toList();
+        : _jobs.where((job) => job.category.toLowerCase() == _category.toLowerCase()).toList();
 
     if (!isWorker) {
       return ListView(
@@ -965,8 +914,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         label: Text(category),
                         selected: _category == category,
                         checkmarkColor: Colors.white,
-                        onSelected: (_) =>
-                            setState(() => _category = category),
+                        onSelected: (_) => _onCategoryChanged(category),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(99),
                         ),
@@ -986,31 +934,44 @@ class _DiscoverPageState extends State<DiscoverPage> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: _view == _DiscoverView.map
-                ? JobsMapView(
-                    jobs: visibleJobs,
-                    onJobTap: widget.onJobTap,
-                  )
-                : ListView(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    children: [
-                      HeroPanel(
-                        isWorker: true,
-                        loggedIn: widget.loggedIn,
-                        onPrimaryAction: null,
-                      ),
-                      const SizedBox(height: 14),
-                      ...visibleJobs.map(
-                        (job) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: JobCard(
-                            job: job,
-                            onTap: () => widget.onJobTap(job),
+            child: _isLoading && visibleJobs.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : (_view == _DiscoverView.map
+                    ? JobsMapView(
+                        jobs: visibleJobs,
+                        onJobTap: widget.onJobTap,
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        children: [
+                          HeroPanel(
+                            isWorker: true,
+                            loggedIn: widget.loggedIn,
+                            onPrimaryAction: null,
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
+                          const SizedBox(height: 14),
+                          if (visibleJobs.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Center(
+                                child: Text(
+                                  'Hakuna kazi iliyopatikana kwenye kitengo hiki.',
+                                  style: TextStyle(color: MfColors.muted),
+                                ),
+                              ),
+                            )
+                          else
+                            ...visibleJobs.map(
+                              (job) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: JobCard(
+                                  job: job,
+                                  onTap: () => widget.onJobTap(job),
+                                ),
+                              ),
+                            ),
+                        ],
+                      )),
           ),
         ],
       ),
@@ -1459,24 +1420,37 @@ class EmployerDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       children: [
-        MetricGrid(),
-        SizedBox(height: 12),
-        WorkerMatchCard(
-          name: 'Asha Mwinyi',
-          service: 'Cleaning specialist',
-          rating: '4.9',
-          distance: '1.1 km',
-          completed: '128 jobs',
-        ),
-        SizedBox(height: 10),
-        WorkerMatchCard(
-          name: 'Juma Said',
-          service: 'Delivery and errands',
-          rating: '4.8',
-          distance: '2.6 km',
-          completed: '86 jobs',
+        const MetricGrid(),
+        const SizedBox(height: 12),
+        FutureBuilder<List<WorkerModel>>(
+          future: MobileApiService.instance.fetchWorkers(),
+          builder: (context, snapshot) {
+            final workers = snapshot.data ?? [];
+            if (workers.isEmpty && snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final displayWorkers = workers.isNotEmpty ? workers.take(4).toList() : <WorkerModel>[];
+
+            return Column(
+              children: displayWorkers.map((w) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: WorkerMatchCard(
+                    name: w.name,
+                    service: '${w.category} specialist',
+                    rating: w.rating.toStringAsFixed(1),
+                    distance: '${w.distanceKm ?? 1.5} km',
+                    completed: '${w.completedJobs} jobs',
+                  ),
+                );
+              }).toList(),
+            );
+          },
         ),
       ],
     );
